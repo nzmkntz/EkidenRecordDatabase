@@ -1,0 +1,67 @@
+/**
+ * class seed
+ */
+.seed{
+    background-color: #bbddff;
+}
+
+/* .contentsHeader{
+    background-image: url('images/bg-menu.png');
+} */
+
+.modal{
+    display:none;    /* 初期状態では非表示のため */
+    height:100vh;    /* モーダルとブラウザの高さを合わせる */
+    position:fixed;    /* スクロールしても表示されるように */
+    top:0;
+    width:100%;
+}
+
+.modalBase{
+    background:rgba(0, 0, 0, 0.8);    /* モーダルのベース アルファチャンネル設定 */
+    height:100vh;
+    position:absolute;
+    width:100%;
+}
+
+.modalContent{
+    background:#eeeeee;
+    top:50%;
+    left:50%;
+    padding:40px;
+    position:absolute;
+    transform:translate(-50%, -50%);
+    width:60%;
+    /* top,leftを50%にすることで起点を画面中央に、
+     * transform:translate(-50%,-50%)でコンテンツサイズの50%分、
+     * 上と左に配置位置を戻す。よって画面中央に画面が配置される。 */
+}
+
+/* 行高さ、行下部のライン色を指定 */
+table tr{
+    border-bottom: solid 1px #ccc;
+    /* height: 24px; */
+    /*cursor: pointer; */
+}
+
+/* 行にカーソルが当たったときの指定色*/
+table tr:hover{
+    background-color: #d4f0fd;
+}
+
+table th,table td{
+    text-align: center;
+    padding: 8px 4px;
+}  
+
+table th.wd45, table td.wd45{
+    width: 45px;
+}
+
+table th.wd180, table td.wd180{
+    width: 180px;
+}
+
+nav{ 	
+    display: inline;
+} 
