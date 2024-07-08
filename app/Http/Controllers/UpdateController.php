@@ -157,7 +157,7 @@ class UpdateController extends Controller
             $cmbYear = CommonParts::createYearCmbBox();     
             $cmbPref = CommonParts::createPrefCmbBox();              
             $MPY = $this->searchM_PLAYERS($request, CommonConst::C_DEFPAGE);
-            return View::make("/update/mstPlayers", ["mstPlayersList" => $collegeCode ,"mstCollegesList" => $MCL , 'cmbYear' => $cmbYear, 'cmbPref' => $cmbPref, "strUpdResult" => $strUpdResult]);
+            return View::make("/update/mstPlayers", ["mstPlayersList" => $MPY , 'cmbYear' => $cmbYear, 'cmbPref' => $cmbPref, "strUpdResult" => $strUpdResult]);
         }           
     }
 
@@ -295,6 +295,7 @@ class UpdateController extends Controller
         // view表示に必要な情報
         $cmbYear = CommonParts::createYearCmbBox();     
         $cmbSect = CommonParts::createSectCmbBox(); 
+        $cmbColleges = $this->searchM_COLLEGES($request, "recPlayer", null, false);   // オープン参加チームの場合、大学コンボボックスを設ける         
         // 大学マスタは全大学を表示（ページネーション指定なし）   
         $MCL = $this->searchM_COLLEGES($request, "recPlayer");   
 
@@ -310,7 +311,8 @@ class UpdateController extends Controller
                                    , 'selTypeCode' => $selTypeCode
                                    , 'results' => $list
                                    , 'updResult' => $strUpdResult
-                                   , 'rowCnt' => $rowCnt]);
+                                   , 'rowCnt' => $rowCnt
+                                   , 'cmbColleges' => $cmbColleges]);
         }
         else{
             // 検索時
@@ -322,7 +324,8 @@ class UpdateController extends Controller
                                    , 'selTypeVal' => $selTypeVal
                                    , 'selTypeCode' => $selTypeCode
                                    , 'results' => $list
-                                   , 'rowCnt' => $rowCnt]);        
+                                   , 'rowCnt' => $rowCnt
+                                   , 'cmbColleges' => $cmbColleges]);        
         }
     }
 
@@ -390,6 +393,18 @@ class UpdateController extends Controller
             // json化
             $results = json_encode($arrJson); 
         }
+        // 処理タイプを判断
+        else if($proc == "getM_COLLEGESWithoutOpenEntry"){
+            // 大学マスタ取得処理
+            $MCL = $this->searchM_COLLEGES($request, $proc, null, false);
+
+            // 結果リストの取得（テキストで作った暫定措置）
+            $results = "";
+            foreach ($MCL as $rowMCL) {
+                $results = $results.$rowMCL->COLLEGE_CODE.":".$rowMCL->COLLEGE_NAME.","; 
+            }
+            $results = substr($results, 0, strlen($results) - 1);        
+        }
 
         return $results;
 
@@ -414,7 +429,7 @@ class UpdateController extends Controller
     /**
      * 大学マスタ検索
      */
-    public function searchM_COLLEGES(request $request, $pKind, $pPaginate = null){
+    public function searchM_COLLEGES(request $request, $pKind, $pPaginate = null, $pIsIncludeOpenEntry = true){
         // TODO:条件指定処理が適当なので治すこと
         if($request->has("submit")
         && $pKind == "searchM_COLLEGE"){
@@ -449,15 +464,25 @@ class UpdateController extends Controller
             $var = "%";
         }
 
+        // オープン参加校を含むかどうかの条件を設定
+        if($pIsIncludeOpenEntry == true){
+            $arrOpenEntry = [0, 1];
+        }
+        else{
+            $arrOpenEntry = [0];
+        }
+
         if(is_null($pPaginate)){
             // 全件取得
-            $MCL = M_COLLEGE::where($col, "like", "%{$var}%")             
+            $MCL = M_COLLEGE::where($col, "like", "%{$var}%")
+            ->whereIn( "OPEN_ENTRY_FLAG", $arrOpenEntry )
             ->orderBy("COLLEGE_CODE", "asc")
             ->get();
         }
         else{
             // 対象ページ分取得
-            $MCL = M_COLLEGE::where($col, "like", "%{$var}%")             
+            $MCL = M_COLLEGE::where($col, "like", "%{$var}%")
+            ->whereIn( "OPEN_ENTRY_FLAG", $arrOpenEntry )
             ->orderBy("COLLEGE_CODE", "asc")
             ->paginate($pPaginate);
             // URLの指定（登録処理の後はURLが変わってしまいリンクがおかしくなるため）
@@ -773,7 +798,9 @@ class UpdateController extends Controller
                 "sections.SECTION_CODE",                
                 "sections.SECTION_NAME",
                 "D_ENTRY_COLLEGES.COLLEGE_CODE",
+                "D_ENTRY_PLAYERS.OPEN_ENTRY_COLLEGE_CODE",                
                 "M_COLLEGES.COLLEGE_NAME",
+                "M_COLLEGES.OPEN_ENTRY_FLAG",                
                 "D_ENTRY_PLAYERS.PLAYER_CODE",
                 "M_PLAYERS.PLAYER_NAME",
                 "D_ENTRY_PLAYERS.TIME_RECORD",
@@ -896,7 +923,7 @@ class UpdateController extends Controller
                 
             // 新規選手コード変数を定義
             $newCode = "";
-            // 無限ループ
+            // ループ処理開始（画面上の項目数分ループする）
             for($i = 1; $i > 0 ; $i++){  
                 // 画面の項目が存在しなければループ終了
                 if($req->has("rowPlayerCode".$i) == false){
@@ -912,7 +939,12 @@ class UpdateController extends Controller
                 // 選手コードが空（記録の新規登録）の場合
                 $playerCode = $req->get("rowPlayerCode".$i);
                 $playerName = $req->get("rowPlayerName".$i);
-                $collegeCode = $req->get("rowCollegeCode".$i);                
+                $collegeCode = $req->get("rowCollegeCode".$i); 
+                // オープン参加の場合、参加大学コードを取得
+                $openEntryCollegeCode = null;
+                if($req->has("cmbOpenEntryCollege".$i) == true){
+                    $openEntryCollegeCode  = $req->get("cmbOpenEntryCollege".$i);                
+                }                                
                 if($playerCode == ""){
                     // 選手コードを選手マスタから取得
                     $playerCode = $this->getPlayerCodeByName($playerName, $collegeCode);
@@ -942,7 +974,8 @@ class UpdateController extends Controller
             	->insert(
                     [ "PLAYER_CODE" => $playerCode,
                       "YEAR_CODE" => $pSelYear,
-                      "COLLEGE_CODE" => $collegeCode,                    
+                      "COLLEGE_CODE" => $collegeCode,
+                      "OPEN_ENTRY_COLLEGE_CODE" => $openEntryCollegeCode,                                      
                       "SECTION_CODE" => $req->get("rowSectionCode".$i),
             	      "TIME_RECORD" => $req->get("rowTimeRecord".$i),                      
                       "DEFAULT_FLAG" => $this->getChkToFlg($req->get("rowDefault".$i)),
@@ -977,7 +1010,9 @@ class UpdateController extends Controller
         }
         else if($result->count() == 1){
             // 一致する場合は選手コードを返す
-            return $result->value("PLAYER_CODE");
+            // getで取得すると配列インデックスから指定する必要がある
+            // (firstで取得しない理由は念押しで複数件チェックを行なうため)
+            return $result[0]->PLAYER_CODE;
         }
         else if($result->count() == 0){
             // 取得できなかった場合は空文字を返す

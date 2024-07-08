@@ -15,7 +15,8 @@ return [
     // 検索メイン
     'searchSectionTitle' => '箱根駅伝データベース／検索メイン',
     'searchSectChartLink' => 'チャートで確認',
-    'searchSectPleaseSelYear' => '表示する年を選択してください。'
+    'searchSectPleaseSelYear' => '表示する年を選択してください。',
+    'searchPlayerTitle' => '選手情報'    
 
 ];
 

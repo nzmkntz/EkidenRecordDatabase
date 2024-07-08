@@ -4,7 +4,7 @@
 @include('head')
 
 @section('body')
-    <h1>@lang('messages.updateSectionTitle')</h1>
+    <h1>@lang('messages.searchPlayerTitle')</h1>
 
     <div><a href="\update\recYear">記録登録（年別）</a></div><br>
     <div><a href="\update\recPlayer">記録登録（選手別）</a></div><br>

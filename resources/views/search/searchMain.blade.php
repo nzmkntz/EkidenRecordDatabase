@@ -58,7 +58,7 @@
                 @if($selType == "chkTypeCollege")
                 {{-- 大学指定の場合、1列目:区間名、2列目:選手名 --}}
                     <td{!! $seed !!}>{{ $row->sections->SECTION_NAME }}</td>
-                    <td>{{ $row->M_PLAYERS->PLAYER_NAME }}</td>                    
+                    <td><a href="\search\player\{{ $row->M_PLAYERS->PLAYER_CODE }}">{{ $row->M_PLAYERS->PLAYER_NAME }}</a></td>                    
                 @elseif($selType == "chkTypeSect")
                     {{-- 区間指定の場合、1列目:番号、2列目:大学名 --}}
                     <td>{{ $loop->iteration }}</td>

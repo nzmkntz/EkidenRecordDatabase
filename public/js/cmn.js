@@ -832,3 +832,12 @@ var closeModal = function(){
     $(".modal").fadeOut();
     return false;
 }
+
+/**
+ * モーダル画面を閉じてコンボボックスの内容を更新する
+ */
+ var closeModalAndUpdateComboBox = function(pTarget){
+    $(".modal").fadeOut();
+    getM_COLLEGESWithoutOpenEntry(pTarget);
+    return false;
+}

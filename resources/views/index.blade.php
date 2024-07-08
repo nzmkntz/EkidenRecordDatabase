@@ -30,6 +30,7 @@
     <form action="/" name="frmSetLocale" method="post">
     @csrf
         <p>
+        <?php echo $currentLocale ?>
         <!-- ロケールのコンボボックス -->
         <select name="setLocale">
             <option id="localeEN" value="en" <?php echo $selectedEn ?>>English</option>

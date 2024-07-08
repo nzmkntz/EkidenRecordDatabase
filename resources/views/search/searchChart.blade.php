@@ -11,11 +11,16 @@
     <form action="/search/chart" name="frmChart" method="get">
         <p>
         {!! $cmbYear !!}
+        <select name="cmbChartType" id="cmbChartType" >
+            <option name="optSection" value="0">区間タイム</option>
+            <option name="optAccumulate" value="1">累積タイム</option>
+        </select>
         <input type="submit" name="submit" value="検索">
         </P>
+        {!! $strChartYear !!}年の{!! $strMyChart !!}を表示
     </form>   
     <div class="canvas-container">
-        <canvas id="myChart" width="400" height="400"></canvas>
+        <canvas id="myChart" width="400" height="500"></canvas>
     </div>
     <p><a href="\">トップへ</a></p>
 @endsection

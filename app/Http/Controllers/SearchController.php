@@ -80,13 +80,22 @@ class SearchController extends Controller
         $cnt = 0;
 
         // 年取得
-        $chartYear = 1900;
+        $chartYear = date('Y');
         if($request->has("cmbYear")){
             $chartYear = $request->get("cmbYear");
         }
+        $strChartYear = $chartYear;
 
         // チャート用データ取得
-        $myChart = $this->searchChartDataByYear($request, $chartYear, $cnt);
+        $myChart;
+        $strMyChart;
+        if($request->has("cmbChartType") && $request->get("cmbChartType") == "1"){
+            $myChart = $this->searchChartAccumulatedDataByYear($request, $chartYear, $cnt);    // 累積   
+            $strMyChart = "累積タイム";
+        }else{
+            $myChart = $this->searchChartDataByYear($request, $chartYear, $cnt);    // 区間別
+            $strMyChart = "区間タイム";            
+        }     
         $myChartTest;
 
         // チャートタイプ設定
@@ -147,17 +156,21 @@ class SearchController extends Controller
                                 "yAxes" => [[
                                     "ticks" => [
                                         "reverse" => true,
-                                        "max" => 21,
+                                        "max" => $idxColleges + 1,
                                         "min" => 1,
                                         "stepSize" => 1
                                     ]
                                 ]]
                             ],
                             "animation" => [
-                                "easing" => "easeOutQuart"
+                                // "easing" => "easeOutQuart"
+                                "easing" => "easeInQuad"
                             ],
                             "responsive" => true,
-                            "maintainAspectRatio" => false
+                            "maintainAspectRatio" => false,
+                            "interaction" => [
+                                "mode" => "point"
+                            ]
                         ]
         ];    
         
@@ -165,7 +178,7 @@ class SearchController extends Controller
         $cmbYear = CommonParts::createYearCmbBox();        
 
         //return var_dump($myChartTest);
-        return View::make("/search/searchChart",  ["myChart" => json_encode($myChartTest), "cmbYear" => $cmbYear]);        
+        return View::make("/search/searchChart",  ["myChart" => json_encode($myChartTest), "cmbYear" => $cmbYear, "strChartYear" => $strChartYear, "strMyChart" => $strMyChart]);        
 
         // 以下、サンプル
         // $myChart = ["type" => $chtType,
@@ -317,6 +330,95 @@ class SearchController extends Controller
         return $chtData;
 
     } 
+
+    /**
+     * 選手別記録テーブル取得（累積タイム）
+     */
+    public function searchChartAccumulatedDataByYear(request $request, $pYear, &$pRowCnt){
+        // https://teratail.com/questions/196063
+        // "複雑なSQL問い合わせで、SQLがわかっている場合は、無理にクエリビルダーのメソッドチェーンを繋げる必要はない"
+        $chtData = DB::select("SELECT EC_SECT.COLLEGE_CODE
+        , MC.COLLEGE_NAME
+        , EC_SECT.SECTION_CODE
+        , EC_SECT.SECTION_NAME
+        , EC_SECT.YEAR_CODE                                     
+        , CASE WHEN ORIGIN.SUM_TIME_RECORD IS NULL THEN NULL ELSE COUNT(COMPARE.SUM_TIME_RECORD) + 1 END AS RANKING
+        , ORIGIN.PLAYER_CODE
+        , MP.PLAYER_NAME
+        , ORIGIN.SUM_TIME_RECORD AS PLAYER_RECORD
+
+     FROM (SELECT EC.COLLEGE_CODE
+                , EC.TIME_RECORD
+                , EC.YEAR_CODE
+                , sect.SECTION_CODE
+                , sect.SECTION_NAME
+             FROM d_entry_colleges AS EC
+                , sections AS sect
+            WHERE EC.YEAR_CODE = :year1) AS EC_SECT
+          LEFT JOIN (SELECT EP3.YEAR_CODE
+                          , EP3.TIME_RECORD
+                          , EP3.COLLEGE_CODE
+                          , EP3.SECTION_CODE
+                          , EP3.PLAYER_CODE
+                          , SEC_TO_TIME(SUM(time_to_sec(EP4.TIME_RECORD))) SUM_TIME_RECORD
+                       FROM d_entry_players AS EP3
+                            LEFT JOIN d_entry_players AS EP4
+                            ON EP3.YEAR_CODE = EP4.YEAR_CODE
+                            AND EP3.COLLEGE_CODE = EP4.COLLEGE_CODE
+                            AND EP3.SECTION_CODE >= EP4.SECTION_CODE
+                      WHERE EP3.YEAR_CODE = :year2
+                    GROUP BY EP3.YEAR_CODE
+                          , EP3.TIME_RECORD
+                          , EP3.COLLEGE_CODE
+                          , EP3.SECTION_CODE
+                          ) ORIGIN
+          ON EC_SECT.COLLEGE_CODE = ORIGIN.COLLEGE_CODE
+          AND EC_SECT.SECTION_CODE = ORIGIN.SECTION_CODE
+          LEFT JOIN (SELECT EP3.YEAR_CODE
+                          , EP3.TIME_RECORD
+                          , EP3.COLLEGE_CODE
+                          , EP3.SECTION_CODE
+                          , SEC_TO_TIME(SUM(time_to_sec(EP4.TIME_RECORD))) SUM_TIME_RECORD
+                       FROM d_entry_players AS EP3
+                            LEFT JOIN d_entry_players AS EP4
+                            ON EP3.YEAR_CODE = EP4.YEAR_CODE
+                            AND EP3.COLLEGE_CODE = EP4.COLLEGE_CODE
+                            AND EP3.SECTION_CODE >= EP4.SECTION_CODE
+                      WHERE EP3.YEAR_CODE = :year3
+                    GROUP BY EP3.YEAR_CODE
+                          , EP3.TIME_RECORD
+                          , EP3.COLLEGE_CODE
+                          , EP3.SECTION_CODE
+                          ) COMPARE 
+          ON ORIGIN.SECTION_CODE = COMPARE.SECTION_CODE
+          AND ORIGIN.SUM_TIME_RECORD > COMPARE.SUM_TIME_RECORD
+          LEFT JOIN m_colleges AS MC
+          ON EC_SECT.COLLEGE_CODE = MC.COLLEGE_CODE
+          LEFT JOIN m_players AS MP
+          ON ORIGIN.PLAYER_CODE = MP.PLAYER_CODE                                      
+                      GROUP BY EC_SECT.COLLEGE_CODE
+                          , MC.COLLEGE_NAME
+                          , EC_SECT.SECTION_CODE
+                          , EC_SECT.SECTION_NAME
+                          , EC_SECT.YEAR_CODE
+                          , ORIGIN.PLAYER_CODE
+                          , MP.PLAYER_NAME
+                          , ORIGIN.SUM_TIME_RECORD
+                                ORDER BY EC_SECT.TIME_RECORD
+                                       , EC_SECT.COLLEGE_CODE
+                                       , EC_SECT.SECTION_CODE
+                                       , PLAYER_RECORD"
+                            , ["year1" => $pYear
+                             , "year2" => $pYear
+                             , "year3" => $pYear]);
+
+        // 行数セット
+        $pRowCnt = count($chtData);
+
+        // データセットを返却
+        return $chtData;
+
+    }     
     
     private function setChartRGBA($pIdx, $pAlpha){
         // TODO:大学コードごとの色判定
@@ -355,5 +457,10 @@ class SearchController extends Controller
         return "rgba(".$r.", ".$g.", ".$b.", ".$pAlpha.")";
 
     }
+
+    // 検索：メイン
+    public function searchPlayer($player_code, Request $request){
+        return View::make("/search/searchPlayer");
+    }    
 
 }

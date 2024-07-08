@@ -20,7 +20,7 @@
         @isset($updResult)
             {!! $updResult !!}<br>
         @endisset
-        {!! $selYear !!}年のデータを編集
+        {!! $selYear !!}年のデータを編集 登録チーム数：{!! $rowCnt !!}
         <input type="hidden" id="hdnSelYear" name="hdnSelYear" value="{!! $selYear !!}">
         <input type="hidden" id="hdnRowCnt" name="hdnRowCnt" value="{!! $rowCnt !!}">
         <div id="lbltest"></div>

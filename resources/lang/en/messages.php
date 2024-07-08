@@ -15,7 +15,8 @@ return [
     // Search Section
     'searchSectionTitle' => 'Hakone-Ekiden Database / Main page of Search Records ',
     'searchSectChartLink' => 'Confirm by Charts',
-    'searchSectPleaseSelYear' => 'Please select a Year that you want to display records.'
+    'searchSectPleaseSelYear' => 'Please select a Year that you want to display records.',
+    'searchPlayerTitle' => 'Player Information'  
 
 ];
 

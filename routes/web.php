@@ -36,6 +36,9 @@ Route::post('/search/exec', 'SearchController@searchExec');
 // チャート
 Route::get('/search/chart', 'SearchController@makeChart');
 
+// 検索ボタン押下後
+Route::get('/search/player/{player_code}', 'SearchController@searchPlayer');
+
 ////////////////////////
 // 
 // 登録系

@@ -78,7 +78,27 @@
                     @endif
                     {{-- 区間で検索したときは1列目に順位を表示 --}}   
                     <td id="rowOrder{!! $loop->iteration !!}" class="wd45">{!! $intOrder !!}</td>                                    
-                    <td id="rowCollegeName{!! $loop->iteration !!}" name="rowCollegeName{!! $loop->iteration !!}" class="wd180">{!! $row->COLLEGE_NAME !!}</td>
+                    <td id="rowCollegeName{!! $loop->iteration !!}" name="rowCollegeName{!! $loop->iteration !!}" class="wd180">{!! $row->COLLEGE_NAME !!}
+                    @if($row->OPEN_ENTRY_FLAG == 1)
+                        {{-- オープン参加校の場合、大学を指定できるようにする --}}
+                        <br>                     
+                        <select name="cmbOpenEntryCollege{!! $loop->iteration !!}" id="cmbOpenEntryCollege{!! $loop->iteration !!}">
+                        {{-- 先頭に空欄を設定 --}}
+                        <option name="optOECC" value=""></option>
+                        @foreach($cmbColleges as $cmbRow)
+                            {{-- オープン参加大学と同じ大学名を初期表示指定する --}}
+                            @if($row->OPEN_ENTRY_COLLEGE_CODE == $cmbRow->COLLEGE_CODE)
+                                <?php $selectedCOLLEGE_CODE = "selected"; ?>
+                            @else
+                                <?php $selectedCOLLEGE_CODE = ""; ?>
+                            @endif                          
+                            <option name="optOECC{!! $cmbRow->COLLEGE_CODE !!}" value="{!! $cmbRow->COLLEGE_CODE !!}" {!! $selectedCOLLEGE_CODE !!}>{!! $cmbRow->COLLEGE_NAME !!}</option>
+                        @endforeach
+                        </select>
+                        <br>    
+                        <a href="javascript:void(0)" onclick="makeModal();return false;" id="addMColleges">大学マスタ登録</a><br>
+                    @endif                       
+                    </td>
                 @elseif($selType == "rdoTypeCollege")
                     {{-- 大学で検索したときは1列目に区間名を表示 --}}                
                     <td id="rowSectionName{!! $loop->iteration !!}" class="wd45">{!! $row->SECTION_NAME !!}</td>
@@ -99,6 +119,27 @@
     @endisset    
     <p><a href="\update\main">登録メインへ</a></p>
     <p><a href="\">トップへ</a></p>
+
+    <div class="modal">
+        <div class="modalBase">
+        </div>
+        <div class="modalContent">
+            <form name="mstCollegesEntryForm" id="mstCollegesEntryForm" method="post">
+                <span id="strUpdResult"></span>
+                <br>
+                大学マスタ登録
+                <br>       
+                <input type="hidden" name="hidEntryCollege_Code" id="hidEntryCollege_Code" value="">
+                大学名<input type="text" name="txtEntryCollege_Name" id="txtEntryCollege_Name"><br>
+                大学名カナ<input type="text" name="txtEntryCollege_Kana" id="txtEntryCollege_Kana">
+                <br>
+                <input type="button" name="entry" value="登録" onclick="fcChkEntryData('modal')">
+                <input type="button" name="clear" value="クリア" onclick="mstCollegeEntryclear()">
+                <br>
+            </form>
+            <a class="" href="" onclick="closeModal();return false;">閉じる</a>
+        </div><!--modal__inner-->
+    </div><!--modal-->     
 @endsection
 
 @include('js')
